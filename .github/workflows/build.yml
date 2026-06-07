@@ -1,0 +1,22 @@
+name: Xcode Build Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile HealthView (iOS Simulator SDK, no code signing)
+        run: |
+          xcodebuild build \
+            -project HealthView/HealthView.xcodeproj \
+            -target HealthView \
+            -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO
