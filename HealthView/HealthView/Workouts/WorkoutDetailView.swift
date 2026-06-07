@@ -36,6 +36,14 @@ struct WorkoutDetailView: View {
                         }
                     }
 
+                    if !routePoints.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Elevation")
+                                .font(.headline)
+                            ElevationChartView(points: routePoints)
+                        }
+                    }
+
                     let splits = SplitsCalculator.compute(from: routePoints)
                     if !splits.isEmpty {
                         SplitsView(splits: splits)
@@ -51,9 +59,13 @@ struct WorkoutDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(summary.startDate, style: .date)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(summary.startDate, style: .date)
+                Text("·")
+                Text(summary.sourceName)
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
 
             HStack(spacing: 24) {
                 statView(title: "Duration", value: summary.formattedDuration)
@@ -63,6 +75,13 @@ struct WorkoutDetailView: View {
                 if let pace = summary.formattedPace {
                     statView(title: "Pace", value: pace)
                 }
+            }
+
+            if summary.formattedDistance == nil {
+                Text("No distance recorded for this workout, so pace and splits aren't available — common for indoor or strength workouts, or activities where the source app didn't record GPS/distance.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
             }
         }
     }

@@ -22,6 +22,9 @@ struct WorkoutRowView: View {
                 Text(summary.startDate, style: .date)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                Text(summary.sourceName)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
 
             Spacer()

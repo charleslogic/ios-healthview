@@ -100,7 +100,7 @@ final class HealthKitManager {
                 }
                 if let locations = locationsOrNil {
                     points.append(contentsOf: locations.map {
-                        RoutePoint(coordinate: $0.coordinate, timestamp: $0.timestamp)
+                        RoutePoint(coordinate: $0.coordinate, altitude: $0.altitude, timestamp: $0.timestamp)
                     })
                 }
                 if done {

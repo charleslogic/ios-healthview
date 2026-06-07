@@ -30,6 +30,11 @@ struct WorkoutSummary: Identifiable, Hashable {
             .sumQuantity()?.doubleValue(for: .meter())
     }
 
+    /// The app that recorded this workout (e.g. "Workoutdoors", "Strava", "Health").
+    var sourceName: String {
+        workout.sourceRevision.source.name
+    }
+
     var totalEnergyBurnedKilocalories: Double? {
         workout.statistics(for: HKQuantityType(.activeEnergyBurned))?
             .sumQuantity()?.doubleValue(for: .kilocalorie())
