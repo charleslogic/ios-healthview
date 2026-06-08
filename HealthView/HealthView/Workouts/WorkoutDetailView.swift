@@ -22,6 +22,53 @@ struct WorkoutDetailView: View {
         }
     }
 
+    private var averageHeartRate: Double? {
+        guard !heartRateSamples.isEmpty else { return nil }
+        return heartRateSamples.map(\.bpm).reduce(0, +) / Double(heartRateSamples.count)
+    }
+
+    private var maxHeartRate: Double? {
+        heartRateSamples.map(\.bpm).max()
+    }
+
+    private struct Stat: Identifiable {
+        let id = UUID()
+        let icon: String
+        let title: String
+        let value: String
+    }
+
+    private var stats: [Stat] {
+        var items = [Stat(icon: "clock", title: "Duration", value: summary.formattedDuration)]
+
+        if let distance = summary.formattedDistance {
+            items.append(Stat(icon: "arrow.right", title: "Distance", value: distance))
+        }
+        if let pace = summary.formattedPace {
+            items.append(Stat(icon: "speedometer", title: "Avg Pace", value: pace))
+        }
+        if let speed = summary.formattedSpeed {
+            items.append(Stat(icon: "gauge.with.needle", title: "Avg Speed", value: speed))
+        }
+        if let (gain, loss) = ElevationCalculator.gainAndLoss(from: routePoints) {
+            items.append(Stat(icon: "arrow.up", title: "Elevation +", value: "\(Int(gain.rounded())) ft"))
+            items.append(Stat(icon: "arrow.down", title: "Elevation -", value: "\(Int(loss.rounded())) ft"))
+        }
+        if let averageHeartRate {
+            items.append(Stat(icon: "heart", title: "Avg HR", value: "\(Int(averageHeartRate.rounded())) bpm"))
+        }
+        if let maxHeartRate {
+            items.append(Stat(icon: "heart.fill", title: "Max HR", value: "\(Int(maxHeartRate.rounded())) bpm"))
+        }
+        if let calories = summary.formattedCalories {
+            items.append(Stat(icon: "flame", title: "Calories", value: calories))
+        }
+
+        return items
+    }
+
+    private let statColumns = [GridItem(.flexible()), GridItem(.flexible())]
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -32,6 +79,8 @@ struct WorkoutDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 40)
                 } else {
+                    statsGrid
+
                     if !routePoints.isEmpty {
                         RouteMapView(points: routePoints, selectedPoint: selectedRoutePoint)
                     }
@@ -75,16 +124,6 @@ struct WorkoutDetailView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
 
-            HStack(spacing: 24) {
-                statView(title: "Duration", value: summary.formattedDuration)
-                if let distance = summary.formattedDistance {
-                    statView(title: "Distance", value: distance)
-                }
-                if let pace = summary.formattedPace {
-                    statView(title: "Pace", value: pace)
-                }
-            }
-
             if summary.formattedDistance == nil {
                 Text("No distance recorded for this workout, so pace and splits aren't available — common for indoor or strength workouts, or activities where the source app didn't record GPS/distance.")
                     .font(.footnote)
@@ -94,14 +133,11 @@ struct WorkoutDetailView: View {
         }
     }
 
-    private func statView(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.title3)
-                .bold()
+    private var statsGrid: some View {
+        LazyVGrid(columns: statColumns, spacing: 12) {
+            ForEach(stats) { stat in
+                StatCardView(icon: stat.icon, title: stat.title, value: stat.value)
+            }
         }
     }
 

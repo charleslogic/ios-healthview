@@ -78,4 +78,16 @@ struct WorkoutSummary: Identifiable, Hashable {
         let seconds = Int(secondsPerMile) % 60
         return String(format: "%d:%02d /mi", minutes, seconds)
     }
+
+    var formattedSpeed: String? {
+        guard let meters = totalDistanceMeters, meters > 0, duration > 0 else { return nil }
+        let miles = meters / 1609.344
+        let hours = duration / 3600
+        return String(format: "%.1f mph", miles / hours)
+    }
+
+    var formattedCalories: String? {
+        guard let kilocalories = totalEnergyBurnedKilocalories, kilocalories > 0 else { return nil }
+        return String(format: "%.0f kcal", kilocalories)
+    }
 }
