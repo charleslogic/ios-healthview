@@ -34,7 +34,7 @@ Adding/changing HealthKit entitlements is more reliable done by the user via Xco
 **Data flow:** `HealthKitManager` → plain Swift model structs → SwiftUI views. The manager is `@Observable`, holds the single `HKHealthStore`, and is injected app-wide via `.environment(healthKitManager)` in `HealthViewApp`. It exposes async methods (`fetchWorkouts`, `fetchHeartRateSamples`, `fetchRoute`) that return lightweight wrapper structs — `WorkoutSummary`, `HeartRateSample`, `RoutePoint`/`Split` — rather than raw `HK*` types, so views never touch HealthKit directly. Follow this pattern for new data: add a fetch method to the manager and a small decoupled model struct in `HealthKit/`.
 
 **Folder layout reflects this split:**
-- `HealthView/HealthKit/` — the HealthKit access layer: manager + models + pure-function helpers (e.g. `SplitsCalculator`).
+- `HealthView/HealthKit/` — the HealthKit access layer: manager + models + pure-function helpers (e.g. `SplitsCalculator`, `ElevationCalculator`).
 - `HealthView/Workouts/` — SwiftUI views for the workouts feature (list, detail, and the chart/map sub-views composed into the detail screen).
 
 **Auth gating happens at the root.** `ContentView` is the authorization gate: it checks `healthKitManager.authState` and shows either a "Connect to Health" prompt or `WorkoutListView`. New top-level features should similarly assume HealthKit access may not yet be granted.
@@ -42,5 +42,11 @@ Adding/changing HealthKit entitlements is more reliable done by the user via Xco
 **Navigation** uses `NavigationStack` + `navigationDestination(for:)` keyed on the model type (e.g. `WorkoutSummary: Hashable`), not push-by-reference — keep new model structs `Identifiable & Hashable` (hashed/compared by a stable `id`, not by wrapping `HK*` reference types) if they need to participate in navigation.
 
 **Detail screens compose independent chart/map sub-views** (`HeartRateChartView`, `ElevationChartView`, `RouteMapView`, `SplitsView`) that each take plain model arrays and render with Swift Charts / MapKit, fetched in parallel via `async let` in `WorkoutDetailView.loadDetails()`. Each section only renders when its data is non-empty, and `WorkoutDetailView` explains to the user *why* data may be missing (e.g. the "no distance recorded" footnote) rather than silently omitting it — keep that user-facing-explanation pattern for future gaps.
+
+**Charts scale their Y axis to the data, not from zero** — `chartYScale(domain:)` with a small padding derived from the series' own min/max (see `HeartRateChartView`/`ElevationChartView`). Follow this for any new time-series chart so subtle variation stays visible.
+
+**Cross-view scrubbing is driven by one shared selection state.** `WorkoutDetailView` owns `@State selectedDate: Date?` and passes it by `@Binding` to both charts, which use `.chartXSelection(value:)` for drag-to-scrub and draw their own `RuleMark`/`PointMark` + annotation at the nearest sample. `WorkoutDetailView` separately resolves the nearest `RoutePoint` in time and passes it to `RouteMapView` as `selectedPoint`, which drops a marker — so dragging on either chart moves a marker on the map. Reuse this "one shared selection value, each view resolves its own nearest sample" shape for any future linked views.
+
+**Summary stats render as a card grid.** `WorkoutDetailView.stats` builds an array of small `Stat` (icon/title/value) structs — appending an entry only when its underlying data is available — and lays them out via the reusable `StatCardView` in a 2-column `LazyVGrid`. Add new summary metrics by extending that array rather than hand-laying-out more `HStack`s/`Text` pairs.
 
 **Pagination:** `WorkoutListView` fetches in pages (`fetchLimit` growing by `pageSize`) and re-queries from scratch each time rather than tracking offsets/anchors — simplest correct approach for a local, fast HealthKit store. Follow the same approach for any other paginated HealthKit list.
