@@ -13,6 +13,14 @@ struct WorkoutDetailView: View {
     @State private var heartRateSamples: [HeartRateSample] = []
     @State private var routePoints: [RoutePoint] = []
     @State private var isLoading = true
+    @State private var selectedDate: Date?
+
+    private var selectedRoutePoint: RoutePoint? {
+        guard let selectedDate else { return nil }
+        return routePoints.min { lhs, rhs in
+            abs(lhs.timestamp.timeIntervalSince(selectedDate)) < abs(rhs.timestamp.timeIntervalSince(selectedDate))
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -25,14 +33,14 @@ struct WorkoutDetailView: View {
                         .padding(.top, 40)
                 } else {
                     if !routePoints.isEmpty {
-                        RouteMapView(points: routePoints)
+                        RouteMapView(points: routePoints, selectedPoint: selectedRoutePoint)
                     }
 
                     if !heartRateSamples.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Heart Rate")
                                 .font(.headline)
-                            HeartRateChartView(samples: heartRateSamples)
+                            HeartRateChartView(samples: heartRateSamples, selectedDate: $selectedDate)
                         }
                     }
 
@@ -40,7 +48,7 @@ struct WorkoutDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Elevation")
                                 .font(.headline)
-                            ElevationChartView(points: routePoints)
+                            ElevationChartView(points: routePoints, selectedDate: $selectedDate)
                         }
                     }
 

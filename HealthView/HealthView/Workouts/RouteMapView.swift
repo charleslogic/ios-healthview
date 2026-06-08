@@ -8,6 +8,7 @@ import MapKit
 
 struct RouteMapView: View {
     let points: [RoutePoint]
+    var selectedPoint: RoutePoint?
 
     private var coordinates: [CLLocationCoordinate2D] {
         points.map(\.coordinate)
@@ -29,6 +30,16 @@ struct RouteMapView: View {
             Map(initialPosition: .region(region)) {
                 MapPolyline(coordinates: coordinates)
                     .stroke(.blue, lineWidth: 3)
+
+                if let selectedPoint {
+                    Annotation("", coordinate: selectedPoint.coordinate) {
+                        Circle()
+                            .fill(.red)
+                            .frame(width: 14, height: 14)
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                            .shadow(radius: 2)
+                    }
+                }
             }
             .frame(height: 220)
             .clipShape(RoundedRectangle(cornerRadius: 12))
